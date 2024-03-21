@@ -1,0 +1,53 @@
+version: "3.8"
+
+services:
+  api:
+    container_name: express-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mysql
+    ports:
+      - 8080:8000
+    expose:
+      - 8000
+    environment:
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_USER=${DB_USER}
+      - DB_NAME=${DB_NAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+  mysql:
+    container_name: mysql-db
+    image: mysql:latest
+    restart: always
+    ports:
+      - "${DB_PORT:-3306}:${DB_PORT:-3306}"
+      - 33060:33060
+    expose:
+      - "${DB_PORT:-3306}"
+      - 33060
+    environment:
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./dump/mysql:/var/lib/mysql
+    mem_limit: 512m
+
+  cache:
+    container_name: redis-cache
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    command: /bin/bash -c 'redis-server --appendonly yes'
+    volumes:
+      - ./dump/redis:/data
+    mem_limit: 96m
+
+volumes:
+  mysql:
+  redis:
